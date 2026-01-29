@@ -146,8 +146,10 @@ npm run dev
 
 - Never commit your `.env` file or expose your Plaid credentials
 - Use Plaid's sandbox environment for testing
-- In production, implement proper authentication and user management
+- **IMPORTANT**: In production, implement proper authentication and user management
+- **IMPORTANT**: Plaid access tokens are currently stored in plain text in the database. For production use, implement encryption for the `plaid_access_token` column in the `plaid_items` table using a secure encryption library
 - Consider encrypting sensitive data in the database
+- Implement rate limiting and input validation for all API endpoints in production
 
 ## License
 

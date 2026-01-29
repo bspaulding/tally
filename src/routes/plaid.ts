@@ -19,6 +19,11 @@ router.post('/create_link_token', async (req: Request, res: Response) => {
 router.post('/exchange_public_token', async (req: Request, res: Response) => {
   try {
     const { public_token } = req.body;
+    
+    if (!public_token) {
+      return res.status(400).json({ error: 'public_token is required' });
+    }
+    
     const result = await exchangePublicToken(public_token);
     res.json({ success: true, item_id: result.itemId });
   } catch (error) {

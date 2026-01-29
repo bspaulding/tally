@@ -77,6 +77,12 @@ router.post('/:id/categories', (req: Request, res: Response) => {
       return res.status(400).json({ error: 'categoryIds must be an array' });
     }
 
+    // Check if transaction exists
+    const transaction = db.prepare('SELECT id FROM transactions WHERE id = ?').get(transactionId);
+    if (!transaction) {
+      return res.status(404).json({ error: 'Transaction not found' });
+    }
+
     // Remove existing categories
     db.prepare('DELETE FROM transaction_categories WHERE transaction_id = ?').run(transactionId);
 

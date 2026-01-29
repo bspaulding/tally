@@ -9,7 +9,7 @@ export function startScheduler() {
       await syncTransactions();
       console.log('Scheduled sync completed');
     } catch (error) {
-      console.error('Error during scheduled sync:', error);
+      console.error('Error during scheduled sync');
     }
   });
 
