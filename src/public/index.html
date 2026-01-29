@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tally - Personal Accounting</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background: white;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 28px;
+            color: #2c3e50;
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background: #2980b9;
+        }
+
+        button.secondary {
+            background: #95a5a6;
+        }
+
+        button.secondary:hover {
+            background: #7f8c8d;
+        }
+
+        .section {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .section h2 {
+            font-size: 20px;
+            margin-bottom: 15px;
+            color: #2c3e50;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ecf0f1;
+        }
+
+        th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        tr:hover {
+            background: #f8f9fa;
+        }
+
+        .amount {
+            font-weight: 600;
+        }
+
+        .amount.positive {
+            color: #27ae60;
+        }
+
+        .amount.negative {
+            color: #e74c3c;
+        }
+
+        .category-tag {
+            display: inline-block;
+            background: #3498db;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 12px;
+            margin-right: 5px;
+            margin-bottom: 3px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+        }
+
+        .modal-content {
+            background: white;
+            margin: 50px auto;
+            padding: 30px;
+            border-radius: 8px;
+            max-width: 500px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+        }
+
+        .close {
+            font-size: 28px;
+            font-weight: bold;
+            color: #aaa;
+            cursor: pointer;
+        }
+
+        .close:hover {
+            color: #000;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+
+        input[type="text"],
+        textarea,
+        select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .checkbox-group {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+        }
+
+        .checkbox-item {
+            margin-bottom: 8px;
+        }
+
+        .checkbox-item input {
+            margin-right: 8px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #95a5a6;
+        }
+
+        .status-message {
+            padding: 10px 15px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            display: none;
+        }
+
+        .status-message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status-message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .account-item {
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+
+        .account-name {
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        .account-balance {
+            font-size: 18px;
+            font-weight: 600;
+            color: #27ae60;
+            margin-top: 5px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #95a5a6;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>💰 Tally - Personal Accounting</h1>
+        </div>
+    </header>
+
+    <div class="container">
+        <div id="statusMessage" class="status-message"></div>
+
+        <div class="actions">
+            <button onclick="linkBankAccount()">🏦 Link Bank Account</button>
+            <button onclick="syncTransactions()" class="secondary">🔄 Sync Transactions</button>
+            <button onclick="openCategoryModal()">📁 Manage Categories</button>
+        </div>
+
+        <div class="section">
+            <h2>💳 Accounts</h2>
+            <div id="accounts">
+                <div class="loading">Loading accounts...</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>📋 Recent Transactions</h2>
+            <div id="transactions">
+                <div class="loading">Loading transactions...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Category Management Modal -->
+    <div id="categoryModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Manage Categories</h2>
+                <span class="close" onclick="closeCategoryModal()">&times;</span>
+            </div>
+            <div class="form-group">
+                <label>Category Name</label>
+                <input type="text" id="categoryName" placeholder="e.g., Groceries, Entertainment">
+            </div>
+            <div class="form-group">
+                <label>Description (optional)</label>
+                <textarea id="categoryDescription" placeholder="Category description"></textarea>
+            </div>
+            <button onclick="addCategory()">Add Category</button>
+            <hr style="margin: 20px 0;">
+            <h3 style="margin-bottom: 15px;">Existing Categories</h3>
+            <div id="categoryList"></div>
+        </div>
+    </div>
+
+    <!-- Assign Categories Modal -->
+    <div id="assignCategoryModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Assign Categories</h2>
+                <span class="close" onclick="closeAssignCategoryModal()">&times;</span>
+            </div>
+            <div id="transactionInfo" style="margin-bottom: 20px; padding: 10px; background: #f8f9fa; border-radius: 4px;"></div>
+            <div class="checkbox-group" id="categoryCheckboxes"></div>
+            <button onclick="saveCategories()" style="margin-top: 15px;">Save</button>
+        </div>
+    </div>
+
+    <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
+    <script>
+        let categories = [];
+        let currentTransactionId = null;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadAccounts();
+            loadTransactions();
+            loadCategories();
+        });
+
+        function showStatus(message, type = 'success') {
+            const statusEl = document.getElementById('statusMessage');
+            statusEl.textContent = message;
+            statusEl.className = `status-message ${type}`;
+            statusEl.style.display = 'block';
+            setTimeout(() => {
+                statusEl.style.display = 'none';
+            }, 5000);
+        }
+
+        async function loadAccounts() {
+            try {
+                const response = await fetch('/api/accounts');
+                const accounts = await response.json();
+                
+                const accountsEl = document.getElementById('accounts');
+                if (accounts.length === 0) {
+                    accountsEl.innerHTML = '<div class="empty-state">No accounts linked yet. Click "Link Bank Account" to get started.</div>';
+                } else {
+                    accountsEl.innerHTML = accounts.map(account => `
+                        <div class="account-item">
+                            <div class="account-name">${account.name} ${account.mask ? '****' + account.mask : ''}</div>
+                            <div style="color: #7f8c8d; font-size: 14px;">${account.type} ${account.subtype ? '• ' + account.subtype : ''}</div>
+                            <div class="account-balance">$${(account.current_balance || 0).toFixed(2)}</div>
+                        </div>
+                    `).join('');
+                }
+            } catch (error) {
+                console.error('Error loading accounts:', error);
+                showStatus('Failed to load accounts', 'error');
+            }
+        }
+
+        async function loadTransactions() {
+            try {
+                const response = await fetch('/api/transactions');
+                const transactions = await response.json();
+                
+                const transactionsEl = document.getElementById('transactions');
+                if (transactions.length === 0) {
+                    transactionsEl.innerHTML = '<div class="empty-state">No transactions yet. Link an account and sync to see your transactions.</div>';
+                } else {
+                    transactionsEl.innerHTML = `
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Name</th>
+                                    <th>Amount</th>
+                                    <th>Categories</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${transactions.map(t => `
+                                    <tr>
+                                        <td>${t.date}</td>
+                                        <td>
+                                            ${t.name}
+                                            ${t.merchant_name ? `<br><small style="color: #7f8c8d;">${t.merchant_name}</small>` : ''}
+                                        </td>
+                                        <td class="amount ${t.amount < 0 ? 'positive' : 'negative'}">
+                                            ${t.amount < 0 ? '+' : '-'}$${Math.abs(t.amount).toFixed(2)}
+                                        </td>
+                                        <td>
+                                            ${(t.categories || []).map(c => `<span class="category-tag">${c.name}</span>`).join('')}
+                                        </td>
+                                        <td>
+                                            <button onclick="openAssignCategoryModal('${t.id}', '${t.name.replace(/'/g, "\\'")}', ${t.amount}, ${JSON.stringify(t.categories || []).replace(/"/g, '&quot;')})">
+                                                🏷️ Assign
+                                            </button>
+                                        </td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error loading transactions:', error);
+                showStatus('Failed to load transactions', 'error');
+            }
+        }
+
+        async function loadCategories() {
+            try {
+                const response = await fetch('/api/categories');
+                categories = await response.json();
+                updateCategoryList();
+            } catch (error) {
+                console.error('Error loading categories:', error);
+            }
+        }
+
+        function updateCategoryList() {
+            const listEl = document.getElementById('categoryList');
+            if (categories.length === 0) {
+                listEl.innerHTML = '<div class="empty-state">No categories yet.</div>';
+            } else {
+                listEl.innerHTML = categories.map(c => `
+                    <div style="padding: 10px; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <strong>${c.name}</strong>
+                            ${c.description ? `<br><small style="color: #7f8c8d;">${c.description}</small>` : ''}
+                        </div>
+                        <button onclick="deleteCategory(${c.id})" style="background: #e74c3c;">Delete</button>
+                    </div>
+                `).join('');
+            }
+        }
+
+        async function linkBankAccount() {
+            try {
+                const response = await fetch('/api/plaid/create_link_token', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: 'default-user' })
+                });
+                const data = await response.json();
+                
+                const handler = Plaid.create({
+                    token: data.link_token,
+                    onSuccess: async (publicToken) => {
+                        const exchangeResponse = await fetch('/api/plaid/exchange_public_token', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ public_token: publicToken })
+                        });
+                        const result = await exchangeResponse.json();
+                        
+                        if (result.success) {
+                            showStatus('Bank account linked successfully!');
+                            loadAccounts();
+                            loadTransactions();
+                        }
+                    },
+                    onExit: (err) => {
+                        if (err) {
+                            console.error('Plaid Link error:', err);
+                            showStatus('Failed to link bank account', 'error');
+                        }
+                    }
+                });
+                
+                handler.open();
+            } catch (error) {
+                console.error('Error linking bank account:', error);
+                showStatus('Failed to initiate bank linking', 'error');
+            }
+        }
+
+        async function syncTransactions() {
+            showStatus('Syncing transactions...', 'success');
+            try {
+                const response = await fetch('/api/plaid/sync', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                const result = await response.json();
+                
+                if (result.success) {
+                    showStatus('Transactions synced successfully!');
+                    loadTransactions();
+                }
+            } catch (error) {
+                console.error('Error syncing transactions:', error);
+                showStatus('Failed to sync transactions', 'error');
+            }
+        }
+
+        function openCategoryModal() {
+            document.getElementById('categoryModal').style.display = 'block';
+        }
+
+        function closeCategoryModal() {
+            document.getElementById('categoryModal').style.display = 'none';
+            document.getElementById('categoryName').value = '';
+            document.getElementById('categoryDescription').value = '';
+        }
+
+        async function addCategory() {
+            const name = document.getElementById('categoryName').value.trim();
+            if (!name) {
+                alert('Please enter a category name');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/categories', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name,
+                        description: document.getElementById('categoryDescription').value.trim()
+                    })
+                });
+
+                if (response.ok) {
+                    showStatus('Category added successfully!');
+                    document.getElementById('categoryName').value = '';
+                    document.getElementById('categoryDescription').value = '';
+                    await loadCategories();
+                } else {
+                    const error = await response.json();
+                    showStatus(error.error || 'Failed to add category', 'error');
+                }
+            } catch (error) {
+                console.error('Error adding category:', error);
+                showStatus('Failed to add category', 'error');
+            }
+        }
+
+        async function deleteCategory(id) {
+            if (!confirm('Are you sure you want to delete this category?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/categories/${id}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    showStatus('Category deleted successfully!');
+                    await loadCategories();
+                } else {
+                    showStatus('Failed to delete category', 'error');
+                }
+            } catch (error) {
+                console.error('Error deleting category:', error);
+                showStatus('Failed to delete category', 'error');
+            }
+        }
+
+        function openAssignCategoryModal(transactionId, name, amount, existingCategories) {
+            currentTransactionId = transactionId;
+            
+            const infoEl = document.getElementById('transactionInfo');
+            infoEl.innerHTML = `
+                <strong>${name}</strong><br>
+                <span class="amount ${amount < 0 ? 'positive' : 'negative'}">
+                    ${amount < 0 ? '+' : '-'}$${Math.abs(amount).toFixed(2)}
+                </span>
+            `;
+
+            const checkboxesEl = document.getElementById('categoryCheckboxes');
+            const existingIds = existingCategories.map(c => c.id);
+            
+            checkboxesEl.innerHTML = categories.map(c => `
+                <div class="checkbox-item">
+                    <input type="checkbox" id="cat-${c.id}" value="${c.id}" ${existingIds.includes(c.id) ? 'checked' : ''}>
+                    <label for="cat-${c.id}">${c.name}</label>
+                </div>
+            `).join('');
+
+            document.getElementById('assignCategoryModal').style.display = 'block';
+        }
+
+        function closeAssignCategoryModal() {
+            document.getElementById('assignCategoryModal').style.display = 'none';
+            currentTransactionId = null;
+        }
+
+        async function saveCategories() {
+            const checkboxes = document.querySelectorAll('#categoryCheckboxes input[type="checkbox"]:checked');
+            const categoryIds = Array.from(checkboxes).map(cb => parseInt(cb.value));
+
+            try {
+                const response = await fetch(`/api/transactions/${currentTransactionId}/categories`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ categoryIds })
+                });
+
+                if (response.ok) {
+                    showStatus('Categories assigned successfully!');
+                    closeAssignCategoryModal();
+                    loadTransactions();
+                } else {
+                    showStatus('Failed to assign categories', 'error');
+                }
+            } catch (error) {
+                console.error('Error assigning categories:', error);
+                showStatus('Failed to assign categories', 'error');
+            }
+        }
+
+        // Close modals when clicking outside
+        window.onclick = function(event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>
