@@ -388,30 +388,60 @@
                                     <th>Actions</th>
                                 </tr>
                             </thead>
-                            <tbody>
-                                ${transactions.map(t => `
-                                    <tr>
-                                        <td>${t.date}</td>
-                                        <td>
-                                            ${t.name}
-                                            ${t.merchant_name ? `<br><small style="color: #7f8c8d;">${t.merchant_name}</small>` : ''}
-                                        </td>
-                                        <td class="amount ${t.amount < 0 ? 'positive' : 'negative'}">
-                                            ${t.amount < 0 ? '+' : '-'}$${Math.abs(t.amount).toFixed(2)}
-                                        </td>
-                                        <td>
-                                            ${(t.categories || []).map(c => `<span class="category-tag">${c.name}</span>`).join('')}
-                                        </td>
-                                        <td>
-                                            <button onclick="openAssignCategoryModal('${t.id}', '${t.name.replace(/'/g, "\\'")}', ${t.amount}, ${JSON.stringify(t.categories || []).replace(/"/g, '&quot;')})">
-                                                🏷️ Assign
-                                            </button>
-                                        </td>
-                                    </tr>
-                                `).join('')}
+                            <tbody id="transactionTableBody">
                             </tbody>
                         </table>
                     `;
+                    
+                    const tbody = document.getElementById('transactionTableBody');
+                    transactions.forEach(t => {
+                        const row = document.createElement('tr');
+                        
+                        // Date cell
+                        const dateCell = document.createElement('td');
+                        dateCell.textContent = t.date;
+                        row.appendChild(dateCell);
+                        
+                        // Name cell
+                        const nameCell = document.createElement('td');
+                        nameCell.textContent = t.name;
+                        if (t.merchant_name) {
+                            const merchantSpan = document.createElement('small');
+                            merchantSpan.style.color = '#7f8c8d';
+                            merchantSpan.textContent = t.merchant_name;
+                            nameCell.appendChild(document.createElement('br'));
+                            nameCell.appendChild(merchantSpan);
+                        }
+                        row.appendChild(nameCell);
+                        
+                        // Amount cell
+                        const amountCell = document.createElement('td');
+                        amountCell.className = `amount ${t.amount < 0 ? 'positive' : 'negative'}`;
+                        amountCell.textContent = `${t.amount < 0 ? '+' : '-'}$${Math.abs(t.amount).toFixed(2)}`;
+                        row.appendChild(amountCell);
+                        
+                        // Categories cell
+                        const categoriesCell = document.createElement('td');
+                        (t.categories || []).forEach(c => {
+                            const tag = document.createElement('span');
+                            tag.className = 'category-tag';
+                            tag.textContent = c.name;
+                            categoriesCell.appendChild(tag);
+                        });
+                        row.appendChild(categoriesCell);
+                        
+                        // Actions cell
+                        const actionsCell = document.createElement('td');
+                        const assignButton = document.createElement('button');
+                        assignButton.textContent = '🏷️ Assign';
+                        assignButton.addEventListener('click', () => {
+                            openAssignCategoryModal(t.id, t.name, t.amount, t.categories || []);
+                        });
+                        actionsCell.appendChild(assignButton);
+                        row.appendChild(actionsCell);
+                        
+                        tbody.appendChild(row);
+                    });
                 }
             } catch (error) {
                 console.error('Error loading transactions:', error);
@@ -573,22 +603,40 @@
             currentTransactionId = transactionId;
             
             const infoEl = document.getElementById('transactionInfo');
-            infoEl.innerHTML = `
-                <strong>${name}</strong><br>
-                <span class="amount ${amount < 0 ? 'positive' : 'negative'}">
-                    ${amount < 0 ? '+' : '-'}$${Math.abs(amount).toFixed(2)}
-                </span>
-            `;
+            const nameEl = document.createElement('strong');
+            nameEl.textContent = name;
+            
+            const amountSpan = document.createElement('span');
+            amountSpan.className = `amount ${amount < 0 ? 'positive' : 'negative'}`;
+            amountSpan.textContent = `${amount < 0 ? '+' : '-'}$${Math.abs(amount).toFixed(2)}`;
+            
+            infoEl.innerHTML = '';
+            infoEl.appendChild(nameEl);
+            infoEl.appendChild(document.createElement('br'));
+            infoEl.appendChild(amountSpan);
 
             const checkboxesEl = document.getElementById('categoryCheckboxes');
             const existingIds = existingCategories.map(c => c.id);
             
-            checkboxesEl.innerHTML = categories.map(c => `
-                <div class="checkbox-item">
-                    <input type="checkbox" id="cat-${c.id}" value="${c.id}" ${existingIds.includes(c.id) ? 'checked' : ''}>
-                    <label for="cat-${c.id}">${c.name}</label>
-                </div>
-            `).join('');
+            checkboxesEl.innerHTML = '';
+            categories.forEach(c => {
+                const div = document.createElement('div');
+                div.className = 'checkbox-item';
+                
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.id = `cat-${c.id}`;
+                checkbox.value = c.id;
+                checkbox.checked = existingIds.includes(c.id);
+                
+                const label = document.createElement('label');
+                label.htmlFor = `cat-${c.id}`;
+                label.textContent = c.name;
+                
+                div.appendChild(checkbox);
+                div.appendChild(label);
+                checkboxesEl.appendChild(div);
+            });
 
             document.getElementById('assignCategoryModal').style.display = 'block';
         }
